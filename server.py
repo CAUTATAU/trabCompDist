@@ -2,6 +2,7 @@ import socket
 import pickle
 import numpy as np
 import sys
+import time
 
 def multiply(subA, matrixB):
     return np.dot(subA, matrixB)
@@ -18,7 +19,11 @@ while True:
     data = conn.recv(10_000_000)
     subA, matrixB = pickle.loads(data)
     print(f"Received subA shape: {subA.shape}, matrixB shape: {matrixB.shape}")
+    t0 = time.perf_counter()
     result = multiply(subA, matrixB)
+    t1 = time.perf_counter()
+    elapsed = t1 - t0
+    print(f"    [server:{PORT}] Tempo multiplicação = {elapsed:.6f}s")
     conn.sendall(pickle.dumps(result))
     conn.close()
     print("Result sent back to client")
