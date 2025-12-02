@@ -16,7 +16,13 @@ print(f"Server listening on port {PORT}")
 while True:
     conn, addr = server_socket.accept()
     print(f"Connection from {addr}")
-    data = conn.recv(10_000_000)
+    data_size = int.from_bytes(conn.recv(8), "big")
+    data = b""
+    while len(data) < data_size:
+        packet = conn.recv(4096)
+        if not packet:
+            break
+        data += packet
     subA, matrixB = pickle.loads(data)
     print(f"Received subA shape: {subA.shape}, matrixB shape: {matrixB.shape}")
     t0 = time.perf_counter()
@@ -24,6 +30,8 @@ while True:
     t1 = time.perf_counter()
     elapsed = t1 - t0
     print(f"    [server:{PORT}] Tempo multiplicação = {elapsed:.6f}s")
-    conn.sendall(pickle.dumps(result))
+    response = pickle.dumps(result)
+    conn.sendall(len(response).to_bytes(8, "big"))
+    conn.sendall(response)
     conn.close()
     print("Result sent back to client")

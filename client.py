@@ -36,11 +36,20 @@ def send_to_server(subA, matrixB, server_ip, server_port):
     sock.connect((server_ip, server_port))
 
     payload = pickle.dumps((subA, matrixB))
+    sock.sendall(len(payload).to_bytes(8, "big"))
     start = time.perf_counter()
     sock.sendall(payload)
 
-    result = sock.recv(10_000_000)
-    result = pickle.loads(result)
+    data_size = int.from_bytes(sock.recv(8), "big")
+
+    data = b""
+    while len(data) < data_size:
+        packet = sock.recv(4096)
+        if not packet:
+            break
+        data += packet
+
+    result = pickle.loads(data)
     end = time.perf_counter()
 
     sock.close()
@@ -91,7 +100,8 @@ except ValueError as e:
 # -----------------------------
 servers = [
     ("localhost", 5000),
-    ("localhost", 5001)
+    ("localhost", 5001),
+    ("localhost", 5002)
 ]
 
 num_servers = len(servers)
